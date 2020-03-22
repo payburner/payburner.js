@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <title>Payburner demo</title>
+    <script src="//cdn.jsdelivr.net/gh/google/code-prettify@master/loader/run_prettify.js"></script>
+    <script
+        src="//code.jquery.com/jquery-3.4.1.min.js"
+        integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+        crossorigin="anonymous"></script>
+
+    <script>
+
+        // this event indicates that the payburner.js script has loaded
+        document.addEventListener('PayburnerJsLoaded', function () {
+            console.log('<- page received PayburnerJsLoaded from payburner.js');
+            jQuery("#payburnerJsLoaded").text("LOADED");
+        });
+
+        // this event provides the status of the payburner browser extension
+        document.addEventListener('PayburnerStatus', function (e) {
+            console.log('<- page received PayburnerStatus from payburner.js:' + JSON.stringify(e.detail, null, 2));
+            jQuery("#payburnerExtensionStatus").text(JSON.stringify(e.detail, null, 2));
+        });
+
+        // this event provides a warning after requesting a payment
+        document.addEventListener('PayburnerPaymentWarning', function (e) {
+            console.log('<- page received PayburnerPaymentWarning from payburner.js:' + JSON.stringify(e.detail, null, 2));
+            jQuery("#payburnerPaymentStatus").text(JSON.stringify(e.detail, null, 2));
+        });
+
+        const straightPay = function () {
+            console.log('-> page sending payment to payburner.js');
+            PAYBURNER.makePayment('rYP8LoefLVbhfUD1AZzo6dWXWtCa6zm7h', 30).then(function (response) {
+                console.log('<- page received Payment Response from payburner.js:' + JSON.stringify(response, null, 2));
+                jQuery('#payburnerPaymentStatus').text(JSON.stringify(response, null, 2));
+            }).catch(function(error) {
+                console.log("<- error: " + JSON.stringify(error, null, 2));
+            });
+        };
+
+        const straightPayWithTag = function () {
+            console.log('-> page sending payment with tag from payburner.js');
+            PAYBURNER.makePaymentWithTag('rYP8LoefLVbhfUD1AZzo6dWXWtCa6zm7h', 0, 30).then(function (response) {
+                console.log('<- page received Payment Response from payburner.js:' + JSON.stringify(response, null, 2));
+                jQuery('#payburnerPaymentStatus').text(JSON.stringify(response, null, 2));
+            }).catch(function(error) {
+                console.log("<- page received error from payburner.js: " + JSON.stringify(error, null, 2) + ' ' + error);
+                jQuery('#payburnerPaymentStatus').text(JSON.stringify(error, null, 2));
+            });
+        };
+
+        const loginToService = function () {
+            console.log('-> page sending login request to payburner.js');
+            PAYBURNER.connectToService('xsongs_store', '/store-app-v2').then(function (response) {
+                console.log('<- page received login response from payburner.js:' + JSON.stringify(response, null, 2));
+                jQuery('.login').text(JSON.stringify(response, null, 2));
+            }).catch(function(error) {
+                console.log("<== error: " + JSON.stringify(error, null, 2));
+            });
+        };
+
+    </script>
+</head>
+
+<body>
+
+
+
+<div id="demo">
+    <h1>Payburner.js Status</h1>
+    <pre id="payburnerJsLoaded" class=" prettyprint lang-js" >NOT_LOADED</pre>
+
+    <h1>Payburner Extension Status</h1>
+    <pre id="payburnerExtensionStatus" class="prettyprint lang-js" ></pre>
+
+    <h1>Make an XRP Payment</h1>
+    <button onClick="straightPay(); return false;">Pay No Tag</button>
+    <button onClick="straightPayWithTag(); return false;">Pay with Tag</button>
+
+    <pre id="payburnerPaymentStatus" class="prettyprint lang-js" ></pre>
+
+    <h1>Login to Service</h1>
+    <button onClick="loginToService(); return false;">Login</button><br>
+    <pre class="login prettyprint lang-js" ></pre>
+</div>
+
+</body>
+<footer>
+    <script src="../src/payburner.js"></script>
+
+</footer>
+</html>
