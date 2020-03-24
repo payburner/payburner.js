@@ -88,6 +88,21 @@ const uuid4 = function() {
   });
 }
 
+PAYBURNER.getServiceInfo = function() {
+  return new Promise(function(resolve, reject) {
+    var dataObj = {messageType: 'GetServiceRequest', payload: {}};
+    const fetchEvent = new CustomEvent('GetServiceRequest', {detail:dataObj});
+    // get ready for a reply from the content script
+    document.addEventListener('GetServiceResult', function respListener(event) {
+      const data = event.detail;
+      PAYBURNER.log('<- get service: ' + JSON.stringify(data.payload));
+      resolve( data.payload );
+      document.removeEventListener('GetServiceResult', respListener);
+    });
+    PAYBURNER.log('-> get service');
+    document.dispatchEvent(fetchEvent);
+  });
+};
 
 PAYBURNER.connectToService = function( appPath) {
   return new Promise(function(resolve, reject) {

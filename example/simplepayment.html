@@ -52,11 +52,22 @@
 
         const loginToService = function () {
             console.log('-> page sending login request to payburner.js');
-            PAYBURNER.connectToService('xsongs_store', '/store-app-v2').then(function (response) {
+            PAYBURNER.connectToService('/store-app-v2').then(function (response) {
                 console.log('<- page received login response from payburner.js:' + JSON.stringify(response, null, 2));
                 jQuery('.login').text(JSON.stringify(response, null, 2));
             }).catch(function(error) {
                 console.log("<== error: " + JSON.stringify(error, null, 2));
+            });
+        };
+
+        const getService = function () {
+            console.log('-> page sending get service request to payburner.js');
+            PAYBURNER.getServiceInfo().then(function (response) {
+                console.log('<- page received service response from payburner.js:' + JSON.stringify(response, null, 2));
+                jQuery('.service').text(JSON.stringify(response, null, 2));
+            }).catch(function(error) {
+                console.log("<== error: " + JSON.stringify(error, null, 2));
+                jQuery('.service').text(JSON.stringify(error, null, 2));
             });
         };
 
@@ -79,6 +90,10 @@
     <button onClick="straightPayWithTag(); return false;">Pay with Tag</button>
 
     <pre id="payburnerPaymentStatus" class="prettyprint lang-js" ></pre>
+
+    <h1>Get Service</h1>
+    <button onClick="getService(); return false;">Get Service</button><br>
+    <pre class="service prettyprint lang-js" ></pre>
 
     <h1>Login to Service</h1>
     <button onClick="loginToService(); return false;">Login</button><br>
