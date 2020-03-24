@@ -89,7 +89,7 @@ const uuid4 = function() {
 }
 
 
-PAYBURNER.connectToService = function(serverUserId, appPath) {
+PAYBURNER.connectToService = function( appPath) {
   return new Promise(function(resolve, reject) {
     if (!PAYBURNER.isPayburnerLoggedIn()) {
       resolve({error: 'Your payburner browser extension must be logged in to perform this function.'});
@@ -104,9 +104,7 @@ PAYBURNER.connectToService = function(serverUserId, appPath) {
       resolve({error: 'Your payburner browser extension must connected to the XRP ledger to perform this function.'});
       return;
     }
-    var dataObj = {messageType: 'ConnectToServiceRequest', payload: {
-        serverUserId: serverUserId, appPath: appPath
-      }};
+    var dataObj = {messageType: 'ConnectToServiceRequest', payload: { appPath: appPath }};
     const fetchEvent = new CustomEvent('ConnectToServiceRequest', {detail:dataObj});
     // get ready for a reply from the content script
     document.addEventListener('ConnectToServiceResult', function respListener(event) {
