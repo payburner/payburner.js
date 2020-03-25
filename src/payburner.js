@@ -53,6 +53,20 @@ PAYBURNER.authGetRequest = function( path ) {
     }});
 };
 
+PAYBURNER.authPostRequest = function( path, body ) {
+  return processAuthRequest({messageType: 'AuthPostRequest', payload: {
+      requestId: 'AuthRequest-' + uuid4(),
+      path: path, body: body
+    }});
+};
+
+PAYBURNER.authPutRequest = function( path, body ) {
+  return processAuthRequest({messageType: 'AuthPutRequest', payload: {
+      requestId: 'AuthRequest-' + uuid4(),
+      path: path, body: body
+    }});
+};
+
 const processAuthRequest = function( authRequest ) {
   return new Promise(function(resolve, reject) {
 
