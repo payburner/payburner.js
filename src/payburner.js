@@ -46,6 +46,33 @@ PAYBURNER.makePayment = function(xrpAddress, xrpAmount) {
     }});
 };
 
+PAYBURNER.authGetRequest = function( path ) {
+  return processAuthRequest({messageType: 'AuthGetRequest', payload: {
+      requestId: 'AuthRequest-' + uuid4(),
+      path: path
+    }});
+};
+
+const processAuthRequest = function( authRequest ) {
+  return new Promise(function(resolve, reject) {
+
+    var fetchEvent = new CustomEvent(authRequest.messageType, {detail:authRequest});
+    // get ready for a reply from the content script
+    document.addEventListener(authRequest.payload.requestId, function respListener(event) {
+      var data = event.detail;
+      PAYBURNER.log('<- auth response: ' + JSON.stringify(data));
+        if (typeof data.payload.error !== 'undefined' && typeof data.payload.error === 'object'
+            && typeof data.payload.error.error === 'string') {
+          data.payload.error = data.payload.error.error;
+        }
+        resolve( data.payload );
+        document.removeEventListener(authRequest.requestId, respListener);
+    });
+    PAYBURNER.log('-> auth request ' + JSON.stringify(authRequest));
+    document.dispatchEvent(fetchEvent);
+  });
+}
+
 const processPayment = function( paymentRequest ) {
   return new Promise(function(resolve, reject) {
     if (!PAYBURNER.canMakePayment()) {
