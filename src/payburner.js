@@ -19,6 +19,7 @@ PAYBURNER.canMakePayment = function() {
 };
 
 PAYBURNER.isPayburnerLoggedIn = function() {
+  PAYBURNER.log('-| Login Status :: ' + (PAYBURNER.loggedIn === true));
   return PAYBURNER.loggedIn === true;
 };
 
@@ -29,6 +30,39 @@ PAYBURNER.isPayburnerConnected = function() {
 PAYBURNER.isXRPLConnectionStatus = function() {
   return PAYBURNER.xrplConnectionStatus === 'connected';
 };
+
+PAYBURNER.addAttestations = function(attestations) {
+  return new Promise(function(resolve, reject) {
+    if (!PAYBURNER.isPayburnerLoggedIn()) {
+      resolve({error: 'Your payburner browser extension must be logged in to perform this function.'});
+      var dataObj = {messageType: 'WantPayburner', payload: {
+          message: 'The page would like to add an attestation.'
+        }};
+      var notifyEvent = new CustomEvent('WantPayburner', {detail:dataObj});
+      document.dispatchEvent(notifyEvent);
+      return;
+    }
+
+    const fetchEvent = new CustomEvent('AddAttestationsRequest', {detail: {
+      messageType: 'AddAttestationsRequest', payload: attestations
+      }});
+    // get ready for a reply from the content script
+    document.addEventListener('AddAttestationsResponse', function respListener(event) {
+      const data = event.detail;
+      PAYBURNER.log('<-add attestations: ' + JSON.stringify(data));
+
+        if (typeof data.payload.error !== 'undefined' && typeof data.payload.error === 'object'
+            && typeof data.payload.error.error === 'string') {
+          data.payload.error = data.payload.error.error;
+        }
+        resolve( data.payload );
+        document.removeEventListener('AddAttestationsResponse', respListener);
+
+    });
+    PAYBURNER.log('-> add attestations.');
+    document.dispatchEvent(fetchEvent);
+  });
+}
 
 PAYBURNER.makePaymentWithTag = function(xrpAddress, destinationTag, xrpAmount) {
   return processPayment({messageType: 'StraightPay', payload: {
@@ -66,6 +100,47 @@ PAYBURNER.authPutRequest = function( path, body ) {
       path: path, body: body
     }});
 };
+
+PAYBURNER.authDeleteRequest = function( path ) {
+  return processAuthRequest({messageType: 'AuthDeleteRequest', payload: {
+      requestId: 'AuthRequest-' + uuid4(),
+      path: path
+    }});
+};
+
+PAYBURNER.encrypt = function( body ) {
+  return processDecryptEncryptRequest({messageType: 'EncryptRequest', payload: {
+      requestId: 'EncryptRequest-' + uuid4(),
+      body: body
+    }});
+};
+
+PAYBURNER.decrypt = function( nonce, body ) {
+  return processDecryptEncryptRequest({messageType: 'DecryptRequest', payload: {
+      requestId: 'DecryptRequest-' + uuid4(),
+      body: body, nonce: nonce
+    }});
+};
+
+const processDecryptEncryptRequest = function( request ) {
+  return new Promise(function(resolve, reject) {
+
+    var fetchEvent = new CustomEvent(request.messageType, {detail:request});
+    // get ready for a reply from the content script
+    document.addEventListener(request.payload.requestId, function respListener(event) {
+      var data = event.detail;
+      PAYBURNER.log('<- decrypt/encrypt response: ' + JSON.stringify(data));
+      if (typeof data.payload.error !== 'undefined' && typeof data.payload.error === 'object'
+          && typeof data.payload.error.error === 'string') {
+        data.payload.error = data.payload.error.error;
+      }
+      resolve( data.payload );
+      document.removeEventListener(request.requestId, respListener);
+    });
+    PAYBURNER.log('-> decrypt/encrypt request ' + JSON.stringify(request));
+    document.dispatchEvent(fetchEvent);
+  });
+}
 
 const processAuthRequest = function( authRequest ) {
   return new Promise(function(resolve, reject) {
@@ -203,9 +278,6 @@ PAYBURNER.notifyPaymentWarning = function(warning) {
   document.dispatchEvent(customAPILoaded);
 }
 
-// -- the payburner api isi initialized.
-var customAPILoaded = new CustomEvent('PayburnerJsLoaded');
-document.dispatchEvent(customAPILoaded);
 
 // -- the content.js is initialized...
 document.addEventListener('contentLoaded', function(event) {
@@ -251,3 +323,8 @@ document.addEventListener('PayburnerLoggedIn', function(event) {
   PAYBURNER.loggedIn = event.detail.loggedIn;
   PAYBURNER.notify();
 });
+
+// -- the payburner api isi initialized.
+var customAPILoaded = new CustomEvent('PayburnerJsLoaded');
+document.dispatchEvent(customAPILoaded);
+PAYBURNER.notify();
